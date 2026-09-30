@@ -1,5 +1,10 @@
 import type { TelemetryMessage } from "../telemetry/types";
 
+const WS_URL =
+  import.meta.env.PROD
+    ? "wss://solar-digital-twin-api.onrender.com/ws/telemetry"
+    : "ws://127.0.0.1:8000/ws/telemetry";
+
 export class TelemetrySocket {
   private socket: WebSocket | null = null;
 
@@ -7,9 +12,7 @@ export class TelemetrySocket {
     onMessage: (message: TelemetryMessage) => void,
     onStatusChange?: (connected: boolean) => void,
   ) {
-    this.socket = new WebSocket(
-      "ws://127.0.0.1:8000/ws/telemetry",
-    );
+    this.socket = new WebSocket(WS_URL);
 
     this.socket.onopen = () => {
       onStatusChange?.(true);
