@@ -143,7 +143,7 @@ export default function SolarPlantScene({
     const loader = new GLTFLoader();
 
     loader.load(
-      "/models/solar_energy_for_shopping_malls.glb",
+      `${import.meta.env.BASE_URL}models/solar_energy_for_shopping_malls.glb`,
       (gltf) => {
         const model = gltf.scene;
 

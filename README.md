@@ -502,6 +502,21 @@ This allows the browser visualization to remain independent of the underlying te
 
 ## 19. Technology Decisions
 
+| Technology | Purpose |
+| :--- | :--- |
+| **React** | Web application UI |
+| **TypeScript** | Type-safe frontend development |
+| **Three.js** | Browser-based 3D digital twin |
+| **FastAPI** | Backend REST/WebSocket API |
+| **Python** | IoT simulation / data processing |
+| **Pandas** | Dataset ingestion |
+| **WebSocket** | Real-time telemetry |
+| **GLTF / GLB** | 3D asset delivery |
+| **Recharts** | Operational trend visualization |
+| **Rule engine** | Deterministic alert detection |
+
+*(Detailed design rationales are documented in [docs/technology-decisions.md](docs/technology-decisions.md))*
+
 ### Why Three.js?
 Three.js provides a browser-native WebGL/WebGPU-oriented 3D experience without requiring a separate game engine runtime.
 
