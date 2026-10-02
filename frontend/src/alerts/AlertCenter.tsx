@@ -5,16 +5,14 @@ interface AlertCenterProps {
   alerts: Alert[];
 }
 
-export function AlertCenter({
-  alerts,
-}: AlertCenterProps) {
+export function AlertCenter({ alerts }: AlertCenterProps) {
   const hasCritical = alerts.some((a) => a.severity === "CRITICAL");
 
   return (
-    <section className="alert-center" aria-label="Active Facility Alerts">
+    <section className="alert-center" aria-label="Operational Alert Log">
       <div className="section-heading alert-header">
         <div>
-          <span className="section-eyebrow">OPERATIONS LOG</span>
+          <span className="section-eyebrow">OPERATIONS MONITOR</span>
           <h2 className="section-title">Active Alerts</h2>
         </div>
 
@@ -34,59 +32,53 @@ export function AlertCenter({
       {alerts.length === 0 ? (
         <div className="alert-empty">
           <span className="empty-nominal-dot" />
-          <div>
+          <div className="empty-text-wrap">
             <strong>ALL SYSTEMS NOMINAL</strong>
-            <p>No active anomalies or threshold exceedances.</p>
+            <p>Plant operating within safe parameters. No active alerts.</p>
           </div>
         </div>
       ) : (
         <div className="alert-list">
           {alerts.map((alert) => {
-            const metadata =
-              ASSET_METADATA[alert.asset_id];
+            const metadata = ASSET_METADATA[alert.asset_id];
 
             return (
               <article
                 key={alert.id}
-                className={`alert-item ${alert.severity.toLowerCase()}`}
+                className={`alert-item alert-${alert.severity.toLowerCase()}`}
               >
-                <div className="alert-indicator">
-                  {alert.severity === "CRITICAL"
-                    ? "●"
-                    : "▲"}
+                <div className="alert-topline">
+                  <span
+                    className={`alert-severity-badge severity-${alert.severity.toLowerCase()}`}
+                  >
+                    <span className="severity-dot" />
+                    {alert.severity}
+                  </span>
+
+                  <span className="alert-time">
+                    {new Date(alert.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </span>
                 </div>
 
-                <div className="alert-content">
-                  <div className="alert-topline">
-                    <span className="alert-severity">
-                      {alert.severity}
+                <div className="alert-body">
+                  <div className="alert-asset-line">
+                    <span className="alert-asset-id">
+                      {alert.asset_id}
                     </span>
-
-                    <span className="alert-time">
-                      {new Date(
-                        alert.timestamp,
-                      ).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}
-                    </span>
+                    <h3 className="alert-asset-name">
+                      {metadata?.displayName ?? alert.asset_id}
+                    </h3>
                   </div>
 
-                  <h3 className="alert-asset-title">
-                    {metadata?.displayName ??
-                      alert.asset_id}
-                  </h3>
-
-                  <p className="alert-message">
-                    {alert.message}
-                  </p>
+                  <p className="alert-message">{alert.message}</p>
 
                   <div className="alert-recommendation">
-                    <span className="rec-tag">ACTION</span>
-                    <small>
-                      {alert.recommendation}
-                    </small>
+                    <span className="rec-prefix">RECOMMENDATION</span>
+                    <p className="rec-text">{alert.recommendation}</p>
                   </div>
                 </div>
               </article>

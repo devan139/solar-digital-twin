@@ -97,11 +97,12 @@ export function TwinWorkspace({
           </div>
         ) : (
           <div className="asset-details-container">
+            {/* Asset Identity Block */}
             <div className="selected-asset-header">
-              <div>
-                <div className="asset-id-chip">
+              <div className="asset-headline">
+                <span className="asset-id-chip">
                   {selectedAsset.asset_id}
-                </div>
+                </span>
                 <h2 className="selected-asset-title">
                   {selectedMetadata?.displayName ??
                     selectedAsset.asset_id}
@@ -110,15 +111,43 @@ export function TwinWorkspace({
                   {selectedMetadata?.location}
                 </p>
               </div>
-
-              <span
-                className={`asset-status ${currentStatus.toLowerCase()}`}
-              >
-                <span className="status-ping" />
-                {currentStatus}
-              </span>
             </div>
 
+            {/* Dominant Status & Temperature Operational Banner */}
+            <div
+              className={`asset-hero-banner status-${currentStatus.toLowerCase()}`}
+            >
+              <div className="hero-status-row">
+                <span
+                  className={`hero-status-badge status-${currentStatus.toLowerCase()}`}
+                >
+                  <span className="status-ping" />
+                  {currentStatus}
+                </span>
+                <span className="hero-status-context">
+                  {currentStatus === "CRITICAL"
+                    ? "THERMAL LIMIT EXCEEDED"
+                    : currentStatus === "WARNING"
+                    ? "ELEVATED TEMPERATURE"
+                    : "NOMINAL OPERATION"}
+                </span>
+              </div>
+
+              <div className="hero-temp-row">
+                <div className="hero-temp-label">
+                  <span>PANEL TEMPERATURE</span>
+                  <small>Real-Time Thermal</small>
+                </div>
+                <div className="hero-temp-value">
+                  <strong>
+                    {selectedAsset.panel_temperature_c.toFixed(1)}
+                  </strong>
+                  <span>&deg;C</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Capacity Utilization Gauge */}
             <div className="utilization-box">
               <div className="utilization-header">
                 <span>CAPACITY UTILIZATION</span>
@@ -132,20 +161,13 @@ export function TwinWorkspace({
               </div>
             </div>
 
+            {/* Secondary Operational Telemetry Grid */}
             <div className="asset-metrics">
               <div className="asset-metric">
                 <span className="metric-label">Power</span>
                 <strong className="metric-val">
                   {selectedAsset.power_kw.toFixed(1)}
                   <small>kW</small>
-                </strong>
-              </div>
-
-              <div className="asset-metric">
-                <span className="metric-label">Temperature</span>
-                <strong className="metric-val">
-                  {selectedAsset.panel_temperature_c.toFixed(1)}
-                  <small>&deg;C</small>
                 </strong>
               </div>
 
@@ -178,6 +200,14 @@ export function TwinWorkspace({
                 <strong className="metric-val">
                   {selectedAsset.current_a.toFixed(1)}
                   <small>A</small>
+                </strong>
+              </div>
+
+              <div className="asset-metric">
+                <span className="metric-label">Panel Temp</span>
+                <strong className="metric-val">
+                  {selectedAsset.panel_temperature_c.toFixed(1)}
+                  <small>&deg;C</small>
                 </strong>
               </div>
             </div>

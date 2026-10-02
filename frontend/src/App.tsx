@@ -166,7 +166,10 @@ function App() {
         <div className="operations-grid">
           <AlertCenter alerts={alertHistory} />
           <AIInsight alert={latestAlert} />
-          <PlantCamera model={plantModel} />
+          <PlantCamera
+            model={plantModel}
+            timestamp={telemetry?.plant.timestamp}
+          />
         </div>
       </main>
     </div>
