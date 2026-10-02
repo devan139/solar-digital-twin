@@ -8,16 +8,36 @@ interface AlertCenterProps {
 export function AlertCenter({
   alerts,
 }: AlertCenterProps) {
+  const hasCritical = alerts.some((a) => a.severity === "CRITICAL");
+
   return (
-    <section className="alert-center">
-      <div className="section-heading">
-        <span>OPERATIONS</span>
-        <h2>Active Alerts</h2>
+    <section className="alert-center" aria-label="Active Facility Alerts">
+      <div className="section-heading alert-header">
+        <div>
+          <span className="section-eyebrow">OPERATIONS LOG</span>
+          <h2 className="section-title">Active Alerts</h2>
+        </div>
+
+        <span
+          className={`alert-count-pill ${
+            alerts.length === 0
+              ? "count-nominal"
+              : hasCritical
+              ? "count-critical"
+              : "count-warning"
+          }`}
+        >
+          {alerts.length === 0 ? "0 ACTIVE" : `${alerts.length} ACTIVE`}
+        </span>
       </div>
 
       {alerts.length === 0 ? (
         <div className="alert-empty">
-          No active alerts
+          <span className="empty-nominal-dot" />
+          <div>
+            <strong>ALL SYSTEMS NOMINAL</strong>
+            <p>No active anomalies or threshold exceedances.</p>
+          </div>
         </div>
       ) : (
         <div className="alert-list">
@@ -45,22 +65,29 @@ export function AlertCenter({
                     <span className="alert-time">
                       {new Date(
                         alert.timestamp,
-                      ).toLocaleTimeString()}
+                      ).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
                     </span>
                   </div>
 
-                  <h3>
+                  <h3 className="alert-asset-title">
                     {metadata?.displayName ??
                       alert.asset_id}
                   </h3>
 
-                  <p>
+                  <p className="alert-message">
                     {alert.message}
                   </p>
 
-                  <small>
-                    {alert.recommendation}
-                  </small>
+                  <div className="alert-recommendation">
+                    <span className="rec-tag">ACTION</span>
+                    <small>
+                      {alert.recommendation}
+                    </small>
+                  </div>
                 </div>
               </article>
             );

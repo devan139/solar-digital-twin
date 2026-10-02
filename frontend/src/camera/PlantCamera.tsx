@@ -147,39 +147,41 @@ export function PlantCamera({
   }, [model]);
 
   return (
-    <section className="plant-camera">
+    <section className="plant-camera" aria-label="Facility Surveillance Feed">
       <div className="camera-header">
         <div>
-          <span>
-            SURVEILLANCE
-          </span>
-
-          <h2>
-            Simulated Plant Camera
-          </h2>
+          <span className="section-eyebrow">SURVEILLANCE FEED</span>
+          <h2 className="section-title">Plant Camera</h2>
         </div>
 
         <div className="camera-live">
-          <span />
-          LIVE
+          <span className="camera-rec-dot" />
+          REC &bull; LIVE
         </div>
       </div>
 
-      <div
-        ref={containerRef}
-        className="camera-view"
-      />
+      <div className="camera-viewport-wrap">
+        <div
+          ref={containerRef}
+          className="camera-view"
+        />
+        <div className="camera-hud-overlay">
+          <div className="camera-hud-top">
+            <span className="hud-id">CAM-01 [ROOF-OPTICAL]</span>
+            <span className="hud-ts">LIVE 1080P</span>
+          </div>
+          <div className="camera-reticle reticle-tl" />
+          <div className="camera-reticle reticle-tr" />
+          <div className="camera-reticle reticle-bl" />
+          <div className="camera-reticle reticle-br" />
+        </div>
+      </div>
 
       <div className="camera-footer">
         <span>CAM-01</span>
-
-        <span>
-          SOLAR FIELD
-        </span>
-
-        <span>
-          SIMULATED FEED
-        </span>
+        <span>SOLAR FIELD</span>
+        <span>30 FPS</span>
+        <span>SIMULATED FEED</span>
       </div>
     </section>
   );

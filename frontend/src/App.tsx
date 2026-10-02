@@ -95,45 +95,81 @@ function App() {
       ? alertHistory[alertHistory.length - 1]
       : undefined;
 
+  const onlineAssetsCount = connected
+    ? telemetry?.assets.length ?? 6
+    : 0;
+
   return (
-    <main>
-      <header>
-        <div>
-          <h1>Solar Plant Digital Twin</h1>
-          <p>Operations Dashboard</p>
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="header-brand">
+          <div className="brand-logo-mark">
+            <span className="brand-icon">◈</span>
+          </div>
+          <div>
+            <h1 className="brand-title">
+              SOLAR<span className="brand-slash">//</span>TWIN
+            </h1>
+            <p className="brand-subtitle">
+              Real-Time Solar Plant Operations
+            </p>
+          </div>
         </div>
 
-        <div>
-          {connected ? "● LIVE" : "○ DISCONNECTED"}
+        <div className="header-status-cluster">
+          <div
+            className={`status-badge live-status ${
+              connected ? "live" : "offline"
+            }`}
+          >
+            <span className="pulse-indicator" />
+            <span>{connected ? "● LIVE" : "○ DISCONNECTED"}</span>
+          </div>
+
+          <div className="status-badge asset-status-badge">
+            <span className="badge-icon">⬢</span>
+            <span>{onlineAssetsCount} ASSETS ONLINE</span>
+          </div>
+
+          <div
+            className={`status-badge ws-status ${
+              connected ? "connected" : "disconnected"
+            }`}
+          >
+            <span className="badge-icon">⚡</span>
+            <span>
+              {connected
+                ? "WEBSOCKET CONNECTED"
+                : "WEBSOCKET DISCONNECTED"}
+            </span>
+          </div>
         </div>
       </header>
 
-      <KpiCards
-        plant={
-          telemetry?.plant ?? null
-        }
-      />
+      <main className="app-main">
+        <KpiCards plant={telemetry?.plant ?? null} />
 
-      <TwinWorkspace
-        selectedAsset={selectedAsset}
-        selectedAssetState={selectedAssetState}
-        selectedMetadata={selectedMetadata}
-      >
-        <SolarPlantScene
-          assetStates={telemetry?.states ?? []}
-          onAssetSelect={setSelectedAssetId}
-          onModelLoaded={setPlantModel}
-        />
-      </TwinWorkspace>
+        <TwinWorkspace
+          selectedAsset={selectedAsset}
+          selectedAssetState={selectedAssetState}
+          selectedMetadata={selectedMetadata}
+        >
+          <SolarPlantScene
+            assetStates={telemetry?.states ?? []}
+            onAssetSelect={setSelectedAssetId}
+            onModelLoaded={setPlantModel}
+          />
+        </TwinWorkspace>
 
-      <PlantCharts history={plantHistory} />
+        <PlantCharts history={plantHistory} />
 
-      <AlertCenter alerts={alertHistory} />
-
-      <AIInsight alert={latestAlert} />
-
-      <PlantCamera model={plantModel} />
-    </main>
+        <div className="operations-grid">
+          <AlertCenter alerts={alertHistory} />
+          <AIInsight alert={latestAlert} />
+          <PlantCamera model={plantModel} />
+        </div>
+      </main>
+    </div>
   );
 }
 

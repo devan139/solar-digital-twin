@@ -93,6 +93,16 @@ export default function SolarPlantScene({
     assetStatesRef.current = assetStates;
   }, [assetStates]);
 
+  const onModelLoadedRef = useRef(onModelLoaded);
+  useEffect(() => {
+    onModelLoadedRef.current = onModelLoaded;
+  }, [onModelLoaded]);
+
+  const onAssetSelectRef = useRef(onAssetSelect);
+  useEffect(() => {
+    onAssetSelectRef.current = onAssetSelect;
+  }, [onAssetSelect]);
+
   useEffect(() => {
     if (!assetsReady) {
       return;
@@ -122,7 +132,7 @@ export default function SolarPlantScene({
     const container = containerRef.current;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b0f14);
+    scene.background = new THREE.Color(0x090d12);
 
     const camera = new THREE.PerspectiveCamera(
       45,
@@ -147,7 +157,7 @@ export default function SolarPlantScene({
       (gltf) => {
         const model = gltf.scene;
 
-        onModelLoaded?.(model);
+        onModelLoadedRef.current?.(model);
 
         model.name = "SolarPlantGLB";
 
@@ -336,7 +346,7 @@ export default function SolarPlantScene({
 
       setSelectedAssetId(assetId);
 
-      onAssetSelect?.(assetId);
+      onAssetSelectRef.current?.(assetId);
 
       const currentState =
         assetStatesRef.current.find(
@@ -364,28 +374,50 @@ export default function SolarPlantScene({
       );
     };
 
+    const handlePointerMove = (event: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x =
+        ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y =
+        -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersections = raycaster.intersectObjects(
+        assetObjects,
+        true,
+      );
+
+      renderer.domElement.style.cursor =
+        intersections.length > 0 ? "pointer" : "default";
+    };
+
     renderer.domElement.addEventListener(
       "pointerdown",
       handlePointerDown,
     );
 
+    renderer.domElement.addEventListener(
+      "pointermove",
+      handlePointerMove,
+    );
+
     const ambientLight = new THREE.AmbientLight(
-      0xffffff,
-      2,
+      0xdbeafe,
+      1.8,
     );
 
     scene.add(ambientLight);
 
     const directionalLight =
       new THREE.DirectionalLight(
-        0xffffff,
-        2,
+        0xfffbeb,
+        2.2,
       );
 
     directionalLight.position.set(
-      10,
-      20,
-      10,
+      12,
+      22,
+      12,
     );
 
     scene.add(directionalLight);
@@ -398,7 +430,9 @@ export default function SolarPlantScene({
 
     const groundMaterial =
       new THREE.MeshStandardMaterial({
-        color: 0x18221b,
+        color: 0x0e1520,
+        roughness: 0.85,
+        metalness: 0.1,
       });
 
     const ground =
@@ -422,7 +456,7 @@ export default function SolarPlantScene({
 
     const boundaryMaterial =
       new THREE.LineBasicMaterial({
-        color: 0x64748b,
+        color: 0x334155,
       });
 
     const boundary =
@@ -438,8 +472,8 @@ export default function SolarPlantScene({
     const grid = new THREE.GridHelper(
       28,
       28,
-      0x334155,
-      0x18221b,
+      0x1e293b,
+      0x121b25,
     );
 
     grid.position.y = 0.01;
@@ -456,7 +490,7 @@ export default function SolarPlantScene({
 
     const markerMaterial =
       new THREE.MeshStandardMaterial({
-        color: 0x94a3b8,
+        color: 0x475569,
       });
 
     const marker =
@@ -515,6 +549,11 @@ export default function SolarPlantScene({
       renderer.domElement.removeEventListener(
         "pointerdown",
         handlePointerDown,
+      );
+
+      renderer.domElement.removeEventListener(
+        "pointermove",
+        handlePointerMove,
       );
 
       controls.dispose();

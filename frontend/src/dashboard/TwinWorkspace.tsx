@@ -17,107 +17,173 @@ export function TwinWorkspace({
   selectedAssetState,
   selectedMetadata,
 }: TwinWorkspaceProps) {
-  return (
-    <section className="twin-workspace">
+  const currentStatus =
+    selectedAssetState?.status ??
+    (selectedAsset ? selectedAsset.status : "NORMAL");
 
+  const utilizationPct = selectedAsset
+    ? Math.min(
+        100,
+        Math.max(
+          0,
+          Math.round(
+            (selectedAsset.power_kw /
+              selectedAsset.capacity_kw) *
+              100,
+          ),
+        ),
+      )
+    : 0;
+
+  return (
+    <section
+      className="twin-workspace"
+      aria-label="Interactive 3D Digital Twin and Telemetry"
+    >
       <div className="twin-panel">
-        <div className="section-heading">
-          <span>LIVE 3D MODEL</span>
-          <h2>Digital Twin</h2>
+        <div className="section-heading twin-heading">
+          <div>
+            <span className="section-eyebrow">
+              3D SPATIAL DIGITAL TWIN
+            </span>
+            <h2 className="section-title">
+              Solar Plant Model
+            </h2>
+          </div>
+
+          <div className="twin-legend">
+            <span className="legend-item legend-normal">
+              <span className="legend-dot" /> NORMAL
+            </span>
+            <span className="legend-item legend-warning">
+              <span className="legend-dot" /> WARNING
+            </span>
+            <span className="legend-item legend-critical">
+              <span className="legend-dot" /> CRITICAL
+            </span>
+            <span className="legend-item legend-selected">
+              <span className="legend-dot" /> SELECTED
+            </span>
+          </div>
         </div>
 
-        {children}
+        <div className="twin-viewport-container">
+          {children}
+          <div className="twin-viewport-overlay">
+            <span>
+              LMB Orbit &bull; RMB Pan &bull; Scroll Zoom &bull; Click Array to Inspect
+            </span>
+          </div>
+        </div>
       </div>
 
       <aside className="asset-panel">
-
         <div className="section-heading">
-          <span>ASSET MONITORING</span>
-          <h2>Selected Asset</h2>
+          <span className="section-eyebrow">
+            ASSET TELEMETRY READOUT
+          </span>
+          <h2 className="section-title">Selected Asset</h2>
         </div>
 
         {!selectedAsset ? (
           <div className="asset-empty">
-            <p>Select a solar asset in the 3D model.</p>
+            <div className="asset-empty-reticle">
+              <span className="reticle-icon">⌖</span>
+            </div>
+            <h3>NO ASSET SELECTED</h3>
+            <p>
+              Click any solar array (ARRAY_01 &ndash; ARRAY_06) in the 3D model to inspect string telemetry, voltage, and thermal status.
+            </p>
           </div>
         ) : (
-          <>
+          <div className="asset-details-container">
             <div className="selected-asset-header">
               <div>
-                <h2>
+                <div className="asset-id-chip">
+                  {selectedAsset.asset_id}
+                </div>
+                <h2 className="selected-asset-title">
                   {selectedMetadata?.displayName ??
                     selectedAsset.asset_id}
                 </h2>
-
-                <p>
+                <p className="selected-asset-location">
                   {selectedMetadata?.location}
                 </p>
-
-                <small>
-                  {selectedAsset.asset_id}
-                </small>
               </div>
 
-              {selectedAssetState && (
-                <span
-                  className={`asset-status ${selectedAssetState.status.toLowerCase()}`}
-                >
-                  {selectedAssetState.status}
-                </span>
-              )}
+              <span
+                className={`asset-status ${currentStatus.toLowerCase()}`}
+              >
+                <span className="status-ping" />
+                {currentStatus}
+              </span>
+            </div>
+
+            <div className="utilization-box">
+              <div className="utilization-header">
+                <span>CAPACITY UTILIZATION</span>
+                <strong>{utilizationPct}%</strong>
+              </div>
+              <div className="utilization-bar-track">
+                <div
+                  className="utilization-bar-fill"
+                  style={{ width: `${utilizationPct}%` }}
+                />
+              </div>
             </div>
 
             <div className="asset-metrics">
-
               <div className="asset-metric">
-                <span>Power</span>
-                <strong>
-                  {selectedAsset.power_kw.toFixed(1)} kW
+                <span className="metric-label">Power</span>
+                <strong className="metric-val">
+                  {selectedAsset.power_kw.toFixed(1)}
+                  <small>kW</small>
                 </strong>
               </div>
 
               <div className="asset-metric">
-                <span>Temperature</span>
-                <strong>
+                <span className="metric-label">Temperature</span>
+                <strong className="metric-val">
                   {selectedAsset.panel_temperature_c.toFixed(1)}
-                  °C
+                  <small>&deg;C</small>
                 </strong>
               </div>
 
               <div className="asset-metric">
-                <span>Efficiency</span>
-                <strong>
-                  {selectedAsset.efficiency_pct.toFixed(1)}%
+                <span className="metric-label">Efficiency</span>
+                <strong className="metric-val">
+                  {selectedAsset.efficiency_pct.toFixed(1)}
+                  <small>%</small>
                 </strong>
               </div>
 
               <div className="asset-metric">
-                <span>Capacity</span>
-                <strong>
-                  {selectedAsset.capacity_kw.toFixed(0)} kW
+                <span className="metric-label">Capacity</span>
+                <strong className="metric-val">
+                  {selectedAsset.capacity_kw.toFixed(0)}
+                  <small>kW</small>
                 </strong>
               </div>
 
               <div className="asset-metric">
-                <span>Voltage</span>
-                <strong>
-                  {selectedAsset.voltage_v.toFixed(1)} V
+                <span className="metric-label">Voltage</span>
+                <strong className="metric-val">
+                  {selectedAsset.voltage_v.toFixed(1)}
+                  <small>V</small>
                 </strong>
               </div>
 
               <div className="asset-metric">
-                <span>Current</span>
-                <strong>
-                  {selectedAsset.current_a.toFixed(1)} A
+                <span className="metric-label">Current</span>
+                <strong className="metric-val">
+                  {selectedAsset.current_a.toFixed(1)}
+                  <small>A</small>
                 </strong>
               </div>
-
             </div>
-          </>
+          </div>
         )}
-
       </aside>
-
     </section>
   );
 }

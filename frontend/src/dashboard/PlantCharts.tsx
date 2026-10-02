@@ -38,17 +38,38 @@ export function PlantCharts({
     ),
   }));
 
-  return (
-    <section className="plant-charts">
+  const latestPoint =
+    data.length > 0 ? data[data.length - 1] : null;
 
+  return (
+    <section
+      className="plant-charts"
+      aria-label="Operational Telemetry Trends"
+    >
       <div className="chart-card">
         <div className="chart-header">
           <div>
-            <span>GENERATION</span>
-            <h2>Power Output</h2>
+            <span className="section-eyebrow">
+              GENERATION TELEMETRY
+            </span>
+            <h2 className="section-title">
+              Plant Power Output
+            </h2>
           </div>
 
-          <strong>MW</strong>
+          <div className="chart-meta">
+            {latestPoint && (
+              <span className="chart-latest-val">
+                {latestPoint.power.toFixed(2)}{" "}
+                <small className="chart-unit">
+                  MW
+                </small>
+              </span>
+            )}
+            <span className="chart-tag">
+              60s BUFFER
+            </span>
+          </div>
         </div>
 
         <div className="chart-container">
@@ -56,19 +77,67 @@ export function PlantCharts({
             width="100%"
             height="100%"
           >
-            <LineChart data={data}>
+            <LineChart
+              data={data}
+              margin={{
+                top: 12,
+                right: 16,
+                left: -16,
+                bottom: 0,
+              }}
+            >
               <CartesianGrid
                 strokeDasharray="3 3"
+                stroke="#1c2533"
+                vertical={false}
               />
 
               <XAxis
                 dataKey="time"
-                minTickGap={30}
+                minTickGap={40}
+                stroke="#475569"
+                tick={{
+                  fill: "#64748b",
+                  fontSize: 10,
+                  fontFamily:
+                    "JetBrains Mono, monospace",
+                }}
+                tickLine={{ stroke: "#334155" }}
               />
 
-              <YAxis />
+              <YAxis
+                stroke="#475569"
+                tick={{
+                  fill: "#64748b",
+                  fontSize: 10,
+                  fontFamily:
+                    "JetBrains Mono, monospace",
+                }}
+                tickLine={{ stroke: "#334155" }}
+                domain={["auto", "auto"]}
+              />
 
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  background: "#0c131a",
+                  borderColor: "#263546",
+                  borderRadius: "8px",
+                  boxShadow:
+                    "0 8px 24px rgba(0,0,0,0.6)",
+                  color: "#f1f5f9",
+                  fontSize: "12px",
+                  fontFamily:
+                    "JetBrains Mono, monospace",
+                }}
+                labelStyle={{
+                  color: "#94a3b8",
+                  marginBottom: "4px",
+                }}
+                formatter={(value: any) => [
+                  `${value} MW`,
+                  "Power Output",
+                ]}
+              />
 
               <Line
                 type="monotone"
@@ -86,11 +155,27 @@ export function PlantCharts({
       <div className="chart-card">
         <div className="chart-header">
           <div>
-            <span>THERMAL MONITORING</span>
-            <h2>Maximum Panel Temperature</h2>
+            <span className="section-eyebrow">
+              THERMAL MONITORING
+            </span>
+            <h2 className="section-title">
+              Maximum Panel Temperature
+            </h2>
           </div>
 
-          <strong>°C</strong>
+          <div className="chart-meta">
+            {latestPoint && (
+              <span className="chart-latest-val val-warning">
+                {latestPoint.temperature.toFixed(1)}{" "}
+                <small className="chart-unit">
+                  °C
+                </small>
+              </span>
+            )}
+            <span className="chart-tag">
+              60s BUFFER
+            </span>
+          </div>
         </div>
 
         <div className="chart-container">
@@ -98,19 +183,67 @@ export function PlantCharts({
             width="100%"
             height="100%"
           >
-            <LineChart data={data}>
+            <LineChart
+              data={data}
+              margin={{
+                top: 12,
+                right: 16,
+                left: -16,
+                bottom: 0,
+              }}
+            >
               <CartesianGrid
                 strokeDasharray="3 3"
+                stroke="#1c2533"
+                vertical={false}
               />
 
               <XAxis
                 dataKey="time"
-                minTickGap={30}
+                minTickGap={40}
+                stroke="#475569"
+                tick={{
+                  fill: "#64748b",
+                  fontSize: 10,
+                  fontFamily:
+                    "JetBrains Mono, monospace",
+                }}
+                tickLine={{ stroke: "#334155" }}
               />
 
-              <YAxis />
+              <YAxis
+                stroke="#475569"
+                tick={{
+                  fill: "#64748b",
+                  fontSize: 10,
+                  fontFamily:
+                    "JetBrains Mono, monospace",
+                }}
+                tickLine={{ stroke: "#334155" }}
+                domain={["auto", "auto"]}
+              />
 
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  background: "#0c131a",
+                  borderColor: "#263546",
+                  borderRadius: "8px",
+                  boxShadow:
+                    "0 8px 24px rgba(0,0,0,0.6)",
+                  color: "#f1f5f9",
+                  fontSize: "12px",
+                  fontFamily:
+                    "JetBrains Mono, monospace",
+                }}
+                labelStyle={{
+                  color: "#94a3b8",
+                  marginBottom: "4px",
+                }}
+                formatter={(value: any) => [
+                  `${value} °C`,
+                  "Max Temperature",
+                ]}
+              />
 
               <Line
                 type="monotone"
