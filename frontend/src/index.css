@@ -539,6 +539,28 @@ html, body {
   margin-bottom: 6px;
 }
 
+.asset-deselect-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.asset-deselect-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
 .selected-asset-title {
   margin: 0 0 3px;
   font-size: 18px;

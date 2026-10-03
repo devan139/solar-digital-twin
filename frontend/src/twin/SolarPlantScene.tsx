@@ -107,14 +107,25 @@ function applyAssetVisual(
   });
 }
 
+const ASSET_IDS = [
+  "ARRAY_01",
+  "ARRAY_02",
+  "ARRAY_03",
+  "ARRAY_04",
+  "ARRAY_05",
+  "ARRAY_06",
+];
+
 interface SolarPlantSceneProps {
   assetStates: AssetState[];
+  selectedAssetId?: string | null;
   onAssetSelect?: (assetId: string | null) => void;
   onModelLoaded?: (model: THREE.Object3D) => void;
 }
 
 export default function SolarPlantScene({
   assetStates,
+  selectedAssetId: controlledSelectedAssetId,
   onAssetSelect,
   onModelLoaded,
 }: SolarPlantSceneProps) {
@@ -122,7 +133,18 @@ export default function SolarPlantScene({
   const assetObjectMap = useRef(new Map<string, THREE.Object3D>());
 
   const [assetsReady, setAssetsReady] = useState(false);
-  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [internalSelectedAssetId, setInternalSelectedAssetId] =
+    useState<string | null>(null);
+
+  const selectedAssetId =
+    controlledSelectedAssetId !== undefined
+      ? controlledSelectedAssetId
+      : internalSelectedAssetId;
+
+  const setSelectedAssetId = (id: string | null) => {
+    setInternalSelectedAssetId(id);
+    onAssetSelectRef.current?.(id);
+  };
 
   const assetStatesRef = useRef(assetStates);
   useEffect(() => {
@@ -151,18 +173,20 @@ export default function SolarPlantScene({
       return;
     }
 
-    for (const assetState of assetStates) {
-      const object = assetObjectMap.current.get(assetState.asset_id);
+    for (const assetId of ASSET_IDS) {
+      const object = assetObjectMap.current.get(assetId);
       if (!object) {
         continue;
       }
 
-      const isSelected = assetState.asset_id === selectedAssetId;
-      const isHovered = assetState.asset_id === hoveredAssetIdRef.current;
+      const assetState = assetStates.find((s) => s.asset_id === assetId);
+      const status = assetState ? assetState.status : "NORMAL";
+      const isSelected = assetId === selectedAssetId;
+      const isHovered = assetId === hoveredAssetIdRef.current;
 
       applyAssetVisual(
         object,
-        assetState.status,
+        status,
         isSelected,
         isHovered,
       );
@@ -265,12 +289,97 @@ export default function SolarPlantScene({
     controls.maxDistance = 25;
     controls.maxPolarAngle = Math.PI / 2 - 0.05;
     controls.target.copy(plantCenter);
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 1.4; // Extremely slow: ~43s per 360° revolution
     controls.update();
+
+    // Respect reduced-motion accessibility preference
+    const motionMediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let prefersReducedMotion = motionMediaQuery.matches;
+
+    const IDLE_DELAY_MS = 5000;
+    let idleTimer: number | null = null;
+    let isInteracting = false;
+
+    const clearIdleTimer = () => {
+      if (idleTimer !== null) {
+        window.clearTimeout(idleTimer);
+        idleTimer = null;
+      }
+    };
+
+    const startIdleTimer = () => {
+      clearIdleTimer();
+      if (prefersReducedMotion || isInteracting) {
+        return;
+      }
+      idleTimer = window.setTimeout(() => {
+        if (!isInteracting && !prefersReducedMotion) {
+          controls.autoRotate = true;
+        }
+      }, IDLE_DELAY_MS);
+    };
+
+    const handleInteractionStart = () => {
+      isInteracting = true;
+      controls.autoRotate = false;
+      clearIdleTimer();
+    };
+
+    const handleInteractionEnd = () => {
+      isInteracting = false;
+      startIdleTimer();
+    };
+
+    const handleMotionPreferenceChange = (e: MediaQueryListEvent) => {
+      prefersReducedMotion = e.matches;
+      if (prefersReducedMotion) {
+        controls.autoRotate = false;
+        clearIdleTimer();
+      } else {
+        startIdleTimer();
+      }
+    };
+
+    motionMediaQuery.addEventListener("change", handleMotionPreferenceChange);
+    controls.addEventListener("start", handleInteractionStart);
+    controls.addEventListener("end", handleInteractionEnd);
+
+    const handleWheel = () => {
+      controls.autoRotate = false;
+      startIdleTimer();
+    };
+    renderer.domElement.addEventListener("wheel", handleWheel, { passive: true });
+
+    const handleWindowPointerUp = () => {
+      if (isInteracting) {
+        handleInteractionEnd();
+      }
+    };
+    window.addEventListener("pointerup", handleWindowPointerUp);
+    window.addEventListener("pointercancel", handleWindowPointerUp);
+
+    // Initial idle countdown on mount
+    startIdleTimer();
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
 
     const handlePointerDown = (event: PointerEvent) => {
+      handleInteractionStart();
+      pointerDownPos = { x: event.clientX, y: event.clientY };
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      const dx = event.clientX - pointerDownPos.x;
+      const dy = event.clientY - pointerDownPos.y;
+      const isDrag = dx * dx + dy * dy > 36; // 6px movement threshold for orbit/pan drag
+
+      if (isDrag) {
+        return;
+      }
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
@@ -278,7 +387,26 @@ export default function SolarPlantScene({
       raycaster.setFromCamera(mouse, camera);
       const intersections = raycaster.intersectObjects(assetObjects, true);
 
+      // CLICKED ON EMPTY BACKGROUND: Deselect active asset and reset visual
       if (intersections.length === 0) {
+        if (selectedAssetIdRef.current) {
+          const prevId = selectedAssetIdRef.current;
+          selectedAssetIdRef.current = null;
+          setSelectedAssetId(null);
+
+          const prevObj = assetObjectMap.current.get(prevId);
+          const prevState = assetStatesRef.current.find(
+            (s) => s.asset_id === prevId,
+          );
+          if (prevObj) {
+            applyAssetVisual(
+              prevObj,
+              prevState ? prevState.status : "NORMAL",
+              false,
+              hoveredAssetIdRef.current === prevId,
+            );
+          }
+        }
         return;
       }
 
@@ -289,11 +417,64 @@ export default function SolarPlantScene({
 
       const assetId = object?.userData.assetId;
       if (!assetId || !object) {
+        if (selectedAssetIdRef.current) {
+          const prevId = selectedAssetIdRef.current;
+          selectedAssetIdRef.current = null;
+          setSelectedAssetId(null);
+
+          const prevObj = assetObjectMap.current.get(prevId);
+          const prevState = assetStatesRef.current.find(
+            (s) => s.asset_id === prevId,
+          );
+          if (prevObj) {
+            applyAssetVisual(
+              prevObj,
+              prevState ? prevState.status : "NORMAL",
+              false,
+              hoveredAssetIdRef.current === prevId,
+            );
+          }
+        }
         return;
       }
 
+      // CLICKED ALREADY SELECTED ASSET: Toggle to deselect and reset blue color
+      if (selectedAssetIdRef.current === assetId) {
+        selectedAssetIdRef.current = null;
+        setSelectedAssetId(null);
+
+        const currentState = assetStatesRef.current.find(
+          (state) => state.asset_id === assetId,
+        );
+        applyAssetVisual(
+          object,
+          currentState ? currentState.status : "NORMAL",
+          false,
+          true,
+        );
+        return;
+      }
+
+      // CLICKED A DIFFERENT ASSET: Reset previous selected asset visual first
+      const prevId = selectedAssetIdRef.current;
+      if (prevId) {
+        const prevObj = assetObjectMap.current.get(prevId);
+        const prevState = assetStatesRef.current.find(
+          (s) => s.asset_id === prevId,
+        );
+        if (prevObj) {
+          applyAssetVisual(
+            prevObj,
+            prevState ? prevState.status : "NORMAL",
+            false,
+            hoveredAssetIdRef.current === prevId,
+          );
+        }
+      }
+
+      // Select newly clicked asset
+      selectedAssetIdRef.current = assetId;
       setSelectedAssetId(assetId);
-      onAssetSelectRef.current?.(assetId);
 
       const currentState = assetStatesRef.current.find(
         (state) => state.asset_id === assetId,
@@ -387,6 +568,7 @@ export default function SolarPlantScene({
     };
 
     renderer.domElement.addEventListener("pointerdown", handlePointerDown);
+    renderer.domElement.addEventListener("pointerup", handlePointerUp);
     renderer.domElement.addEventListener("pointermove", handlePointerMove);
     renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
 
@@ -436,9 +618,13 @@ export default function SolarPlantScene({
     grid.position.set(1.5, -0.04, -0.2);
     scene.add(grid);
 
+    const clock = new THREE.Clock();
+    let animationFrameId: number;
+
     const animate = () => {
-      requestAnimationFrame(animate);
-      controls.update();
+      animationFrameId = requestAnimationFrame(animate);
+      const delta = Math.min(clock.getDelta(), 0.1);
+      controls.update(delta);
       renderer.render(scene, camera);
     };
 
@@ -457,8 +643,18 @@ export default function SolarPlantScene({
     window.addEventListener("resize", handleResize);
 
     return () => {
+      clearIdleTimer();
+      cancelAnimationFrame(animationFrameId);
+      motionMediaQuery.removeEventListener("change", handleMotionPreferenceChange);
+      controls.removeEventListener("start", handleInteractionStart);
+      controls.removeEventListener("end", handleInteractionEnd);
+      window.removeEventListener("pointerup", handleWindowPointerUp);
+      window.removeEventListener("pointercancel", handleWindowPointerUp);
+      renderer.domElement.removeEventListener("wheel", handleWheel);
+
       window.removeEventListener("resize", handleResize);
       renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
+      renderer.domElement.removeEventListener("pointerup", handlePointerUp);
       renderer.domElement.removeEventListener("pointermove", handlePointerMove);
       renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
 

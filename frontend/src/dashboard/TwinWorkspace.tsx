@@ -9,6 +9,7 @@ interface TwinWorkspaceProps {
   selectedAsset: AssetTelemetry | undefined;
   selectedAssetState: AssetState | undefined;
   selectedMetadata: AssetMetadata | undefined;
+  onClearSelection?: () => void;
 }
 
 export function TwinWorkspace({
@@ -16,6 +17,7 @@ export function TwinWorkspace({
   selectedAsset,
   selectedAssetState,
   selectedMetadata,
+  onClearSelection,
 }: TwinWorkspaceProps) {
   const currentStatus =
     selectedAssetState?.status ??
@@ -71,7 +73,7 @@ export function TwinWorkspace({
           {children}
           <div className="twin-viewport-overlay">
             <span>
-              LMB Orbit &bull; RMB Pan &bull; Scroll Zoom &bull; Click Array to Inspect
+              LMB Orbit &bull; RMB Pan &bull; Scroll Zoom &bull; Click Array to Inspect / Deselect
             </span>
           </div>
         </div>
@@ -100,9 +102,22 @@ export function TwinWorkspace({
             {/* Asset Identity Block */}
             <div className="selected-asset-header">
               <div className="asset-headline">
-                <span className="asset-id-chip">
-                  {selectedAsset.asset_id}
-                </span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="asset-id-chip">
+                    {selectedAsset.asset_id}
+                  </span>
+                  {onClearSelection && (
+                    <button
+                      type="button"
+                      onClick={onClearSelection}
+                      className="asset-deselect-btn"
+                      title="Clear selection"
+                      aria-label="Clear selection"
+                    >
+                      Deselect ✕
+                    </button>
+                  )}
+                </div>
                 <h2 className="selected-asset-title">
                   {selectedMetadata?.displayName ??
                     selectedAsset.asset_id}
