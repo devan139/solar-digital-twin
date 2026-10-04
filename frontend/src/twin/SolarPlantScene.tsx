@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import type { AssetState, AssetStatus } from "../telemetry/types";
+import type {
+  AssetState,
+  AssetStatus,
+  AssetTelemetry,
+} from "../telemetry/types";
+import type { AssetMetadata } from "../telemetry/assets";
 
 function applyAssetVisual(
   object: THREE.Object3D,
@@ -30,12 +35,12 @@ function applyAssetVisual(
     if (selected) {
       if (!mesh.userData.selectedMat) {
         mesh.userData.selectedMat = new THREE.MeshStandardMaterial({
-          color: 0x38bdf8,
+          color: 0x101b22,
           map: panelMap || null,
-          emissive: 0x0284c7,
-          emissiveIntensity: 0.65,
+          emissive: 0x095260,
+          emissiveIntensity: 0.48,
           roughness: 0.22,
-          metalness: 0.35,
+          metalness: 0.42,
         });
       }
       mesh.material = mesh.userData.selectedMat;
@@ -45,15 +50,15 @@ function applyAssetVisual(
     if (status === "CRITICAL") {
       if (!mesh.userData.criticalMat) {
         mesh.userData.criticalMat = new THREE.MeshStandardMaterial({
-          color: 0xef4444,
+          color: 0x2e1414,
           map: panelMap || null,
-          emissive: 0x991b1b,
-          emissiveIntensity: hovered ? 0.75 : 0.5,
-          roughness: 0.28,
-          metalness: 0.2,
+          emissive: 0xff5c5c,
+          emissiveIntensity: hovered ? 0.7 : 0.45,
+          roughness: 0.26,
+          metalness: 0.3,
         });
       } else {
-        mesh.userData.criticalMat.emissiveIntensity = hovered ? 0.75 : 0.5;
+        mesh.userData.criticalMat.emissiveIntensity = hovered ? 0.7 : 0.45;
       }
       mesh.material = mesh.userData.criticalMat;
       return;
@@ -62,45 +67,45 @@ function applyAssetVisual(
     if (status === "WARNING") {
       if (!mesh.userData.warningMat) {
         mesh.userData.warningMat = new THREE.MeshStandardMaterial({
-          color: 0xf59e0b,
+          color: 0x2e220a,
           map: panelMap || null,
-          emissive: 0xb45309,
-          emissiveIntensity: hovered ? 0.65 : 0.45,
-          roughness: 0.3,
-          metalness: 0.2,
+          emissive: 0xf4b942,
+          emissiveIntensity: hovered ? 0.65 : 0.4,
+          roughness: 0.26,
+          metalness: 0.3,
         });
       } else {
-        mesh.userData.warningMat.emissiveIntensity = hovered ? 0.65 : 0.45;
+        mesh.userData.warningMat.emissiveIntensity = hovered ? 0.65 : 0.4;
       }
       mesh.material = mesh.userData.warningMat;
       return;
     }
 
-    // NORMAL
+    // NORMAL (Hovered state)
     if (hovered) {
       if (!mesh.userData.hoverMat) {
         mesh.userData.hoverMat = new THREE.MeshStandardMaterial({
-          color: 0x243b55,
+          color: 0x13252a,
           map: panelMap || null,
-          emissive: 0x0e2f50,
-          emissiveIntensity: 0.4,
-          roughness: 0.24,
-          metalness: 0.35,
+          emissive: 0x093339,
+          emissiveIntensity: 0.32,
+          roughness: 0.22,
+          metalness: 0.4,
         });
       }
       mesh.material = mesh.userData.hoverMat;
       return;
     }
 
-    // High-quality photovoltaic normal surface (dark silicon, glass sheen, clear cell segmentation)
+    // NORMAL state: Dark photovoltaic glass, graphite, cell texture preserved, subtle teal/blue-green reflection
     if (!mesh.userData.photovoltaicMat) {
       mesh.userData.photovoltaicMat = new THREE.MeshStandardMaterial({
-        color: 0x182434,
+        color: 0x0f181c,
         map: panelMap || null,
-        emissive: 0x02070e,
-        emissiveIntensity: 0.1,
-        roughness: 0.22,
-        metalness: 0.38,
+        emissive: 0x071e22,
+        emissiveIntensity: 0.18,
+        roughness: 0.18,
+        metalness: 0.46,
       });
     }
     mesh.material = mesh.userData.photovoltaicMat;
@@ -119,6 +124,9 @@ const ASSET_IDS = [
 interface SolarPlantSceneProps {
   assetStates: AssetState[];
   selectedAssetId?: string | null;
+  selectedAsset?: AssetTelemetry;
+  selectedAssetState?: AssetState;
+  selectedMetadata?: AssetMetadata;
   onAssetSelect?: (assetId: string | null) => void;
   onModelLoaded?: (model: THREE.Object3D) => void;
 }
@@ -126,6 +134,9 @@ interface SolarPlantSceneProps {
 export default function SolarPlantScene({
   assetStates,
   selectedAssetId: controlledSelectedAssetId,
+  selectedAsset,
+  selectedAssetState,
+  selectedMetadata,
   onAssetSelect,
   onModelLoaded,
 }: SolarPlantSceneProps) {
@@ -168,6 +179,53 @@ export default function SolarPlantScene({
 
   const hoveredAssetIdRef = useRef<string | null>(null);
 
+  // Secondary Inspection Camera tracking & state
+  const secondaryCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const secondaryTargetPosRef = useRef(new THREE.Vector3(5.4, 3.8, 4.9));
+  const secondaryTargetLookRef = useRef(new THREE.Vector3(1.45, 0.65, -0.15));
+  const currentSecondaryPosRef = useRef(new THREE.Vector3(5.4, 3.8, 4.9));
+  const currentSecondaryLookRef = useRef(new THREE.Vector3(1.45, 0.65, -0.15));
+  const secondaryInitializedRef = useRef(false);
+  const insetViewportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!assetsReady || !selectedAssetId) {
+      return;
+    }
+
+    const object = assetObjectMap.current.get(selectedAssetId);
+    if (!object) {
+      return;
+    }
+
+    object.updateWorldMatrix(true, true);
+    const box = new THREE.Box3().setFromObject(object);
+    const center = new THREE.Vector3();
+    const size = new THREE.Vector3();
+    box.getCenter(center);
+    box.getSize(size);
+
+    const maxDim = Math.max(size.x, size.y, size.z, 0.8);
+    // Inspection distance showing panel surface, cell lines, and immediate mounting context
+    const distance = Math.max(maxDim * 1.5, 1.8);
+    // Elevated 3/4 inspection angle
+    const targetPos = new THREE.Vector3(
+      center.x + distance * 0.72,
+      center.y + distance * 0.65,
+      center.z + distance * 0.78,
+    );
+    const targetLook = center.clone();
+
+    secondaryTargetPosRef.current.copy(targetPos);
+    secondaryTargetLookRef.current.copy(targetLook);
+
+    if (!secondaryInitializedRef.current) {
+      currentSecondaryPosRef.current.copy(targetPos).add(new THREE.Vector3(0.5, 0.4, 0.5));
+      currentSecondaryLookRef.current.copy(targetLook);
+      secondaryInitializedRef.current = true;
+    }
+  }, [selectedAssetId, assetsReady]);
+
   useEffect(() => {
     if (!assetsReady) {
       return;
@@ -199,7 +257,7 @@ export default function SolarPlantScene({
     const container = containerRef.current;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x090d12);
+    scene.background = new THREE.Color(0x071014);
 
     const camera = new THREE.PerspectiveCamera(
       42,
@@ -212,6 +270,12 @@ export default function SolarPlantScene({
     const plantCenter = new THREE.Vector3(1.45, 0.65, -0.15);
     camera.position.set(5.4, 3.8, 4.9);
     camera.lookAt(plantCenter);
+
+    // Secondary Inspection Camera for Live Panel Detail inset
+    const secondaryCamera = new THREE.PerspectiveCamera(36, 16 / 10, 0.1, 500);
+    secondaryCamera.position.copy(currentSecondaryPosRef.current);
+    secondaryCamera.lookAt(currentSecondaryLookRef.current);
+    secondaryCameraRef.current = secondaryCamera;
 
     const modelGroup = new THREE.Group();
     modelGroup.name = "SuppliedSolarPlantModel";
@@ -573,25 +637,25 @@ export default function SolarPlantScene({
     renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
 
     // Balanced Cinematic Lighting setup
-    const ambientLight = new THREE.AmbientLight(0xd0dce8, 0.85);
+    const ambientLight = new THREE.AmbientLight(0xcfe4e8, 0.85);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xfff8ee, 1.5);
+    const keyLight = new THREE.DirectionalLight(0xfff6e5, 1.45);
     keyLight.position.set(9, 16, 7);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x7ea2c6, 0.45);
+    const fillLight = new THREE.DirectionalLight(0x63909d, 0.45);
     fillLight.position.set(-8, 9, -5);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.35);
+    const rimLight = new THREE.DirectionalLight(0x35d0e6, 0.35);
     rimLight.position.set(-4, 5, -8);
     scene.add(rimLight);
 
     // Ground plane matching site dimensions
     const groundGeometry = new THREE.PlaneGeometry(16, 16);
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x090e15,
+      color: 0x071014,
       roughness: 0.95,
       metalness: 0.05,
     });
@@ -605,16 +669,16 @@ export default function SolarPlantScene({
       new THREE.BoxGeometry(10.5, 0.06, 11.0),
     );
     const boundaryMaterial = new THREE.LineBasicMaterial({
-      color: 0x223244,
+      color: 0x20373c,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.5,
     });
     const boundary = new THREE.LineSegments(boundaryGeometry, boundaryMaterial);
     boundary.position.set(1.5, 0.0, -0.2);
     scene.add(boundary);
 
     // Subtle Architectural Spatial Grid
-    const grid = new THREE.GridHelper(16, 16, 0x182432, 0x0f1620);
+    const grid = new THREE.GridHelper(16, 16, 0x102b2b, 0x0d1b20);
     grid.position.set(1.5, -0.04, -0.2);
     scene.add(grid);
 
@@ -625,7 +689,62 @@ export default function SolarPlantScene({
       animationFrameId = requestAnimationFrame(animate);
       const delta = Math.min(clock.getDelta(), 0.1);
       controls.update(delta);
+
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+
+      // 1. Primary main digital-twin camera rendering
+      renderer.setViewport(0, 0, containerWidth, containerHeight);
+      renderer.setScissorTest(false);
       renderer.render(scene, camera);
+
+      // 2. Secondary inspection camera rendering (if asset selected & inset viewport mounted)
+      const currentSelectedId = selectedAssetIdRef.current;
+      const secondaryCam = secondaryCameraRef.current;
+      const insetEl = insetViewportRef.current;
+
+      if (currentSelectedId && secondaryCam && insetEl) {
+        const viewportRect = insetEl.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+
+        const insetW = Math.round(viewportRect.width);
+        const insetH = Math.round(viewportRect.height);
+        const insetX = Math.round(viewportRect.left - containerRect.left);
+        const insetY = Math.round(containerRect.bottom - viewportRect.bottom);
+
+        // Render secondary view only if inset has valid dimensions
+        if (insetW > 10 && insetH > 10) {
+          secondaryCam.aspect = insetW / insetH;
+          secondaryCam.updateProjectionMatrix();
+
+          // Smooth exponential damping toward current target asset
+          const lerpFactor = 1 - Math.exp(-6.5 * delta);
+          currentSecondaryPosRef.current.lerp(
+            secondaryTargetPosRef.current,
+            lerpFactor,
+          );
+          currentSecondaryLookRef.current.lerp(
+            secondaryTargetLookRef.current,
+            lerpFactor,
+          );
+          secondaryCam.position.copy(currentSecondaryPosRef.current);
+          secondaryCam.lookAt(currentSecondaryLookRef.current);
+
+          // Configure scissor & viewport for inset inspection region
+          renderer.setScissorTest(true);
+          renderer.setScissor(insetX, insetY, insetW, insetH);
+          renderer.setViewport(insetX, insetY, insetW, insetH);
+
+          // Clear depth buffer to prevent Z-fighting with main scene
+          renderer.clearDepth();
+          renderer.render(scene, secondaryCam);
+
+          // Restore renderer state
+          renderer.setScissorTest(false);
+          renderer.setViewport(0, 0, containerWidth, containerHeight);
+        }
+      }
     };
 
     animate();
@@ -658,6 +777,7 @@ export default function SolarPlantScene({
       renderer.domElement.removeEventListener("pointermove", handlePointerMove);
       renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
 
+      secondaryCameraRef.current = null;
       controls.dispose();
       renderer.dispose();
 
@@ -672,6 +792,10 @@ export default function SolarPlantScene({
     };
   }, []);
 
+  const currentStatus =
+    selectedAssetState?.status ??
+    (selectedAsset ? selectedAsset.status : "NORMAL");
+
   return (
     <div
       ref={containerRef}
@@ -679,7 +803,90 @@ export default function SolarPlantScene({
       style={{
         width: "100%",
         height: "620px",
+        position: "relative",
       }}
-    />
+    >
+      {/* Three.js main canvas mounts here via containerRef */}
+
+      {/* Live Panel Detail Inset */}
+      <div
+        className={`twin-inset-card ${
+          selectedAssetId ? "has-selection" : "is-idle"
+        }`}
+        aria-label="Solar Array Inspection Inset"
+      >
+        <div className="twin-inset-header">
+          <div className="twin-inset-title-group">
+            <span
+              className={`twin-inset-status-dot ${
+                selectedAssetId ? `status-${currentStatus.toLowerCase()}` : ""
+              }`}
+            />
+            <span className="twin-inset-live-badge">
+              {selectedAssetId ? "LIVE PANEL DETAIL" : "PANEL DETAIL"}
+            </span>
+            {selectedAssetId && (
+              <span className="twin-inset-asset-id">{selectedAssetId}</span>
+            )}
+          </div>
+          {selectedAssetId && onAssetSelect && (
+            <button
+              type="button"
+              className="twin-inset-close-btn"
+              onClick={() => setSelectedAssetId(null)}
+              title="Close Inspection View"
+              aria-label="Close Inspection View"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        <div ref={insetViewportRef} className="twin-inset-viewport">
+          {selectedAssetId ? (
+            <div className="twin-inset-hud-reticle">
+              <span className="hud-corner top-left" />
+              <span className="hud-corner top-right" />
+              <span className="hud-corner bottom-left" />
+              <span className="hud-corner bottom-right" />
+              <span className="hud-feed-label">CAM-02 // CLOSE-UP</span>
+            </div>
+          ) : (
+            <div className="twin-inset-idle-message">
+              <span className="idle-reticle-icon">⌖</span>
+              <span className="idle-title">PANEL DETAIL</span>
+              <span className="idle-subtitle">Select an array to inspect</span>
+            </div>
+          )}
+        </div>
+
+        <div className="twin-inset-footer">
+          {selectedAssetId ? (
+            <>
+              <span
+                className="twin-inset-name"
+                title={selectedMetadata?.displayName || selectedAssetId}
+              >
+                {selectedMetadata?.displayName || selectedAssetId}
+              </span>
+              <div className="twin-inset-metrics">
+                <span
+                  className={`twin-inset-status-pill status-${currentStatus.toLowerCase()}`}
+                >
+                  {currentStatus}
+                </span>
+                {selectedAsset && (
+                  <span className="twin-inset-temp">
+                    {selectedAsset.panel_temperature_c.toFixed(1)} °C
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <span className="twin-inset-idle-hint">STANDBY // SELECT ARRAY</span>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

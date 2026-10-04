@@ -30,6 +30,8 @@ export function PlantCharts({ history }: PlantChartsProps) {
   }));
 
   const latestPoint = data.length > 0 ? data[data.length - 1] : null;
+  const isCriticalTemp = latestPoint ? latestPoint.temperature >= 70 : false;
+  const tempSeriesColor = isCriticalTemp ? "#FF5C5C" : "#F28C28";
 
   return (
     <section
@@ -49,14 +51,14 @@ export function PlantCharts({ history }: PlantChartsProps) {
 
           <div className="chart-meta">
             {latestPoint && (
-              <div className="chart-hero-metric">
+              <div className="chart-hero-metric metric-power">
                 <span className="chart-metric-value">
                   {latestPoint.power.toFixed(2)}
                 </span>
                 <span className="chart-metric-unit">MW</span>
               </div>
             )}
-            <span className="chart-tag chart-tag-blue">ACTIVE MW</span>
+            <span className="chart-tag chart-tag-gold">ACTIVE MW</span>
           </div>
         </div>
 
@@ -73,53 +75,53 @@ export function PlantCharts({ history }: PlantChartsProps) {
             >
               <defs>
                 <linearGradient id="powerGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.22} />
-                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#F6C453" stopOpacity={0.20} />
+                  <stop offset="95%" stopColor="#F6C453" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
 
               <CartesianGrid
                 strokeDasharray="2 4"
-                stroke="#1a2533"
+                stroke="#172a2f"
                 vertical={false}
               />
 
               <XAxis
                 dataKey="time"
                 minTickGap={45}
-                stroke="#2a3a4d"
+                stroke="#20373C"
                 tick={{
-                  fill: "#64748b",
+                  fill: "#849AA2",
                   fontSize: 10,
                   fontFamily: "JetBrains Mono, monospace",
                 }}
-                tickLine={{ stroke: "#2a3a4d" }}
+                tickLine={{ stroke: "#20373C" }}
               />
 
               <YAxis
-                stroke="#2a3a4d"
+                stroke="#20373C"
                 tick={{
-                  fill: "#64748b",
+                  fill: "#849AA2",
                   fontSize: 10,
                   fontFamily: "JetBrains Mono, monospace",
                 }}
-                tickLine={{ stroke: "#2a3a4d" }}
+                tickLine={{ stroke: "#20373C" }}
                 domain={["auto", "auto"]}
               />
 
               <Tooltip
                 contentStyle={{
-                  background: "#0c131a",
-                  borderColor: "#223244",
+                  background: "#0D1B20",
+                  borderColor: "#20373C",
                   borderRadius: "8px",
                   boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
-                  color: "#f1f5f9",
+                  color: "#EDF6F7",
                   fontSize: "12px",
                   fontFamily: "JetBrains Mono, monospace",
                   padding: "8px 12px",
                 }}
                 labelStyle={{
-                  color: "#94a3b8",
+                  color: "#849AA2",
                   marginBottom: "4px",
                   fontSize: "11px",
                 }}
@@ -132,7 +134,7 @@ export function PlantCharts({ history }: PlantChartsProps) {
               <Area
                 type="monotone"
                 dataKey="power"
-                stroke="#38bdf8"
+                stroke="#F6C453"
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#powerGrad)"
@@ -158,11 +160,11 @@ export function PlantCharts({ history }: PlantChartsProps) {
             {latestPoint && (
               <div
                 className={`chart-hero-metric ${
-                  latestPoint.temperature >= 70
+                  isCriticalTemp
                     ? "metric-critical"
                     : latestPoint.temperature >= 55
                     ? "metric-warning"
-                    : ""
+                    : "metric-warning"
                 }`}
               >
                 <span className="chart-metric-value">
@@ -173,11 +175,7 @@ export function PlantCharts({ history }: PlantChartsProps) {
             )}
             <span
               className={`chart-tag ${
-                latestPoint && latestPoint.temperature >= 70
-                  ? "chart-tag-red"
-                  : latestPoint && latestPoint.temperature >= 55
-                  ? "chart-tag-amber"
-                  : "chart-tag-amber"
+                isCriticalTemp ? "chart-tag-red" : "chart-tag-amber"
               }`}
             >
               PEAK TEMP
@@ -198,53 +196,53 @@ export function PlantCharts({ history }: PlantChartsProps) {
             >
               <defs>
                 <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.24} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor={tempSeriesColor} stopOpacity={0.22} />
+                  <stop offset="95%" stopColor={tempSeriesColor} stopOpacity={0.0} />
                 </linearGradient>
               </defs>
 
               <CartesianGrid
                 strokeDasharray="2 4"
-                stroke="#1a2533"
+                stroke="#172a2f"
                 vertical={false}
               />
 
               <XAxis
                 dataKey="time"
                 minTickGap={45}
-                stroke="#2a3a4d"
+                stroke="#20373C"
                 tick={{
-                  fill: "#64748b",
+                  fill: "#849AA2",
                   fontSize: 10,
                   fontFamily: "JetBrains Mono, monospace",
                 }}
-                tickLine={{ stroke: "#2a3a4d" }}
+                tickLine={{ stroke: "#20373C" }}
               />
 
               <YAxis
-                stroke="#2a3a4d"
+                stroke="#20373C"
                 tick={{
-                  fill: "#64748b",
+                  fill: "#849AA2",
                   fontSize: 10,
                   fontFamily: "JetBrains Mono, monospace",
                 }}
-                tickLine={{ stroke: "#2a3a4d" }}
+                tickLine={{ stroke: "#20373C" }}
                 domain={["auto", "auto"]}
               />
 
               <Tooltip
                 contentStyle={{
-                  background: "#0c131a",
-                  borderColor: "#223244",
+                  background: "#0D1B20",
+                  borderColor: "#20373C",
                   borderRadius: "8px",
                   boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
-                  color: "#f1f5f9",
+                  color: "#EDF6F7",
                   fontSize: "12px",
                   fontFamily: "JetBrains Mono, monospace",
                   padding: "8px 12px",
                 }}
                 labelStyle={{
-                  color: "#94a3b8",
+                  color: "#849AA2",
                   marginBottom: "4px",
                   fontSize: "11px",
                 }}
@@ -257,7 +255,7 @@ export function PlantCharts({ history }: PlantChartsProps) {
               <Area
                 type="monotone"
                 dataKey="temperature"
-                stroke="#f59e0b"
+                stroke={tempSeriesColor}
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#tempGrad)"

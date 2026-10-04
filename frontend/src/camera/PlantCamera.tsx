@@ -16,7 +16,7 @@ export function PlantCamera({ model, timestamp }: PlantCameraProps) {
 
     const container = containerRef.current;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x080d12);
+    scene.background = new THREE.Color(0x071014);
 
     const camera = new THREE.PerspectiveCamera(
       45,

@@ -14,10 +14,10 @@ export function KpiCards({ plant }: KpiCardsProps) {
   return (
     <section className="kpi-section" aria-label="Plant Operational Metrics">
       <div className="kpi-grid">
-        <div className="kpi-card">
+        <div className="kpi-card kpi-card-power">
           <div className="kpi-header">
             <span className="kpi-label">Current Power</span>
-            <span className="kpi-tag">MW GEN</span>
+            <span className="kpi-tag kpi-tag-gold">MW GEN</span>
           </div>
           <div className="kpi-body">
             <span className="kpi-value">
@@ -30,10 +30,10 @@ export function KpiCards({ plant }: KpiCardsProps) {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="kpi-card kpi-card-temp">
           <div className="kpi-header">
             <span className="kpi-label">Average Panel Temp</span>
-            <span className="kpi-tag">MEAN</span>
+            <span className="kpi-tag kpi-tag-amber">MEAN</span>
           </div>
           <div className="kpi-body">
             <span className="kpi-value">
@@ -46,16 +46,20 @@ export function KpiCards({ plant }: KpiCardsProps) {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div
+          className={`kpi-card ${
+            maxTemp && maxTemp >= 70
+              ? "kpi-card-critical"
+              : "kpi-card-temp"
+          }`}
+        >
           <div className="kpi-header">
             <span className="kpi-label">Maximum Panel Temp</span>
             <span
               className={`kpi-tag ${
                 maxTemp && maxTemp >= 70
                   ? "tag-critical"
-                  : maxTemp && maxTemp >= 55
-                  ? "tag-warning"
-                  : ""
+                  : "tag-warning"
               }`}
             >
               PEAK
@@ -72,7 +76,7 @@ export function KpiCards({ plant }: KpiCardsProps) {
           </div>
         </div>
 
-        <div className="kpi-card kpi-card-status">
+        <div className={`kpi-card kpi-card-status status-${status.toLowerCase()}`}>
           <div className="kpi-header">
             <span className="kpi-label">Plant Status</span>
             <span
@@ -97,10 +101,10 @@ export function KpiCards({ plant }: KpiCardsProps) {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="kpi-card kpi-card-efficiency">
           <div className="kpi-header">
             <span className="kpi-label">Average Efficiency</span>
-            <span className="kpi-tag">SYSTEM</span>
+            <span className="kpi-tag kpi-tag-neutral">SYSTEM</span>
           </div>
           <div className="kpi-body">
             <span className="kpi-value">

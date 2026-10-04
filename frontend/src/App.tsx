@@ -158,6 +158,9 @@ function App() {
           <SolarPlantScene
             assetStates={telemetry?.states ?? []}
             selectedAssetId={selectedAssetId}
+            selectedAsset={selectedAsset}
+            selectedAssetState={selectedAssetState}
+            selectedMetadata={selectedMetadata}
             onAssetSelect={setSelectedAssetId}
             onModelLoaded={setPlantModel}
           />
