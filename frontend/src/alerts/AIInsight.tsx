@@ -10,15 +10,15 @@ export function AIInsight({ alert }: AIInsightProps) {
     return (
       <section
         className="ai-insight"
-        aria-label="AI Operational Intelligence"
+        aria-label="Operational Rule Advisor"
       >
         <div className="section-heading ai-header">
           <div>
             <span className="section-eyebrow">
-              AI / OPERATIONAL INSIGHT
+              SUPERVISORY SYSTEM &bull; RULE ENGINE
             </span>
             <h2 className="section-title">
-              Operational Insight
+              Operational Rule Advisor
             </h2>
           </div>
           <span className="ai-status-chip chip-standby">STANDBY</span>
@@ -28,13 +28,13 @@ export function AIInsight({ alert }: AIInsightProps) {
           <span className="empty-ai-icon">⬡</span>
           <div className="empty-ai-text">
             <strong>SYSTEM STATUS</strong>
-            <p>No active operational anomaly detected.</p>
+            <p>No active operational anomaly detected across strings.</p>
           </div>
         </div>
 
         <div className="ai-disclaimer">
           <span>
-            Insight generated from deterministic telemetry and operational rules.
+            Advisory generated from deterministic telemetry and operational rules. No black-box ML inference.
           </span>
         </div>
       </section>
@@ -46,18 +46,18 @@ export function AIInsight({ alert }: AIInsightProps) {
   return (
     <section
       className="ai-insight"
-      aria-label="AI Operational Intelligence"
+      aria-label="Operational Rule Advisor"
     >
       <div className="section-heading ai-header">
         <div>
           <span className="section-eyebrow">
-            AI / OPERATIONAL INSIGHT
+            SUPERVISORY SYSTEM &bull; RULE ENGINE
           </span>
           <h2 className="section-title">
-            Operational Insight
+            Operational Rule Advisor
           </h2>
         </div>
-        <span className="ai-status-chip chip-active">AI ACTIVE</span>
+        <span className="ai-status-chip chip-active">RULES ACTIVE</span>
       </div>
 
       <div className="ai-content">
@@ -77,7 +77,7 @@ export function AIInsight({ alert }: AIInsightProps) {
           <div className="ai-block ai-block-impact">
             <span className="ai-block-label">IMPACT</span>
             <p className="ai-block-text">
-              Elevated panel temperature may reduce generation efficiency.
+              Elevated panel temperature may reduce generation efficiency or degrade PV cells.
             </p>
           </div>
 
@@ -90,7 +90,7 @@ export function AIInsight({ alert }: AIInsightProps) {
 
       <div className="ai-disclaimer">
         <span>
-          Insight generated from deterministic telemetry and operational rules.
+          Advisory generated from deterministic telemetry and operational rules. No black-box ML inference.
         </span>
       </div>
     </section>

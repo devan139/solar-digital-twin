@@ -6,6 +6,7 @@ import type {
   AssetState,
   AssetStatus,
   AssetTelemetry,
+  DataCondition,
 } from "../telemetry/types";
 import type { AssetMetadata } from "../telemetry/assets";
 
@@ -14,6 +15,7 @@ function applyAssetVisual(
   status: AssetStatus,
   selected: boolean,
   hovered: boolean,
+  dataCondition: DataCondition = "FRESH",
 ) {
   object.traverse((child) => {
     if (child.type !== "Mesh") {
@@ -44,6 +46,40 @@ function applyAssetVisual(
         });
       }
       mesh.material = mesh.userData.selectedMat;
+      return;
+    }
+
+    // Unavailable / No telemetry state: neutral dark slate
+    if (dataCondition === "UNAVAILABLE") {
+      if (!mesh.userData.unavailableMat) {
+        mesh.userData.unavailableMat = new THREE.MeshStandardMaterial({
+          color: 0x181c20,
+          map: panelMap || null,
+          emissive: 0x1f2428,
+          emissiveIntensity: hovered ? 0.35 : 0.15,
+          roughness: 0.5,
+          metalness: 0.1,
+        });
+      }
+      mesh.material = mesh.userData.unavailableMat;
+      return;
+    }
+
+    // Stale telemetry state: muted amber-slate (distinct from CRITICAL red and WARNING yellow)
+    if (dataCondition === "STALE") {
+      if (!mesh.userData.staleMat) {
+        mesh.userData.staleMat = new THREE.MeshStandardMaterial({
+          color: 0x221d14,
+          map: panelMap || null,
+          emissive: 0x544422,
+          emissiveIntensity: hovered ? 0.45 : 0.25,
+          roughness: 0.35,
+          metalness: 0.2,
+        });
+      } else {
+        mesh.userData.staleMat.emissiveIntensity = hovered ? 0.45 : 0.25;
+      }
+      mesh.material = mesh.userData.staleMat;
       return;
     }
 
@@ -239,6 +275,7 @@ export default function SolarPlantScene({
 
       const assetState = assetStates.find((s) => s.asset_id === assetId);
       const status = assetState ? assetState.status : "NORMAL";
+      const dataCondition = assetState?.data_condition ?? "FRESH";
       const isSelected = assetId === selectedAssetId;
       const isHovered = assetId === hoveredAssetIdRef.current;
 
@@ -247,6 +284,7 @@ export default function SolarPlantScene({
         status,
         isSelected,
         isHovered,
+        dataCondition,
       );
     }
   }, [assetStates, assetsReady, selectedAssetId]);
@@ -515,6 +553,7 @@ export default function SolarPlantScene({
           currentState ? currentState.status : "NORMAL",
           false,
           true,
+          currentState?.data_condition ?? "FRESH",
         );
         return;
       }
@@ -532,6 +571,7 @@ export default function SolarPlantScene({
             prevState ? prevState.status : "NORMAL",
             false,
             hoveredAssetIdRef.current === prevId,
+            prevState?.data_condition ?? "FRESH",
           );
         }
       }
@@ -549,6 +589,7 @@ export default function SolarPlantScene({
         currentState ? currentState.status : "NORMAL",
         true,
         false,
+        currentState?.data_condition ?? "FRESH",
       );
     };
 
@@ -588,6 +629,7 @@ export default function SolarPlantScene({
               prevState ? prevState.status : "NORMAL",
               false,
               false,
+              prevState?.data_condition ?? "FRESH",
             );
           }
         }
@@ -603,6 +645,7 @@ export default function SolarPlantScene({
               newState ? newState.status : "NORMAL",
               false,
               true,
+              newState?.data_condition ?? "FRESH",
             );
           }
         }
@@ -694,6 +737,14 @@ export default function SolarPlantScene({
       const containerWidth = containerRef.current.clientWidth;
       const containerHeight = containerRef.current.clientHeight;
 
+      if (containerWidth <= 0 || containerHeight <= 0) return;
+
+      if (Math.abs(camera.aspect - containerWidth / containerHeight) > 0.001) {
+        camera.aspect = containerWidth / containerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(containerWidth, containerHeight);
+      }
+
       // 1. Primary main digital-twin camera rendering
       renderer.setViewport(0, 0, containerWidth, containerHeight);
       renderer.setScissorTest(false);
@@ -754,14 +805,21 @@ export default function SolarPlantScene({
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
 
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
+      if (width > 0 && height > 0) {
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      }
     };
 
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(container);
     window.addEventListener("resize", handleResize);
 
     return () => {
+      resizeObserver.disconnect();
       clearIdleTimer();
       cancelAnimationFrame(animationFrameId);
       motionMediaQuery.removeEventListener("change", handleMotionPreferenceChange);

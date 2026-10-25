@@ -1,9 +1,11 @@
+import logging
 from pathlib import Path
-
 import pandas as pd
 
 from backend.app.models.telemetry import Telemetry
 from backend.app.models.plant_telemetry import PlantTelemetry
+
+logger = logging.getLogger("solar_twin.data_loader")
 
 
 class TelemetryDataLoader:
@@ -17,13 +19,20 @@ class TelemetryDataLoader:
         )
 
         dataframe["timestamp"] = pd.to_datetime(dataframe["timestamp"])
-
         records = dataframe.to_dict(orient="records")
 
-        return [
-            Telemetry.model_validate(record)
-            for record in records
-        ]
+        valid_records: list[Telemetry] = []
+        for record in records:
+            try:
+                valid_records.append(Telemetry.model_validate(record))
+            except Exception as exc:
+                logger.warning(
+                    "Rejected invalid sensor record during ingestion (asset=%s): %s",
+                    record.get("asset_id", "UNKNOWN"),
+                    exc,
+                )
+
+        return valid_records
 
     def load_plant_telemetry(self) -> list[PlantTelemetry]:
         dataframe = pd.read_excel(
@@ -37,7 +46,14 @@ class TelemetryDataLoader:
 
         records = dataframe.to_dict(orient="records")
 
-        return [
-            PlantTelemetry.model_validate(record)
-            for record in records
-        ]
+        valid_records: list[PlantTelemetry] = []
+        for record in records:
+            try:
+                valid_records.append(PlantTelemetry.model_validate(record))
+            except Exception as exc:
+                logger.warning(
+                    "Rejected invalid plant telemetry record during ingestion: %s",
+                    exc,
+                )
+
+        return valid_records

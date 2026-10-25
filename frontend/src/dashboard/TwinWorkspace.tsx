@@ -9,6 +9,7 @@ interface TwinWorkspaceProps {
   selectedAsset: AssetTelemetry | undefined;
   selectedAssetState: AssetState | undefined;
   selectedMetadata: AssetMetadata | undefined;
+  validationError?: string | null;
   onClearSelection?: () => void;
 }
 
@@ -17,11 +18,19 @@ export function TwinWorkspace({
   selectedAsset,
   selectedAssetState,
   selectedMetadata,
+  validationError,
   onClearSelection,
 }: TwinWorkspaceProps) {
+  const dataCondition = selectedAssetState?.data_condition ?? "FRESH";
+  const ageSeconds = selectedAssetState?.age_seconds;
+  const isStale = dataCondition === "STALE";
+  const isUnavailable = dataCondition === "UNAVAILABLE";
+
   const currentStatus =
+    selectedAssetState?.equipment_condition ??
     selectedAssetState?.status ??
     (selectedAsset ? selectedAsset.status : "NORMAL");
+
 
   const utilizationPct = selectedAsset
     ? Math.min(
@@ -63,6 +72,9 @@ export function TwinWorkspace({
             <span className="legend-item legend-critical">
               <span className="legend-dot" /> CRITICAL
             </span>
+            <span className="legend-item legend-stale">
+              <span className="legend-dot" style={{ backgroundColor: "#b59b57" }} /> STALE
+            </span>
             <span className="legend-item legend-selected">
               <span className="legend-dot" /> SELECTED
             </span>
@@ -103,9 +115,44 @@ export function TwinWorkspace({
             <div className="selected-asset-header">
               <div className="asset-headline">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="asset-id-chip">
-                    {selectedAsset.asset_id}
-                  </span>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <span className="asset-id-chip">
+                      {selectedAsset.asset_id}
+                    </span>
+                    <span
+                      className={`asset-data-chip condition-${dataCondition.toLowerCase()}`}
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                        backgroundColor:
+                          dataCondition === "FRESH"
+                            ? "rgba(0, 194, 209, 0.15)"
+                            : dataCondition === "STALE"
+                            ? "rgba(244, 185, 66, 0.18)"
+                            : "rgba(148, 163, 184, 0.2)",
+                        color:
+                          dataCondition === "FRESH"
+                            ? "#00C2D1"
+                            : dataCondition === "STALE"
+                            ? "#F4B942"
+                            : "#94A3B8",
+                        border: `1px solid ${
+                          dataCondition === "FRESH"
+                            ? "rgba(0, 194, 209, 0.3)"
+                            : dataCondition === "STALE"
+                            ? "rgba(244, 185, 66, 0.35)"
+                            : "rgba(148, 163, 184, 0.3)"
+                        }`,
+                      }}
+                    >
+                      {dataCondition}
+                      {isStale && ageSeconds !== null && ageSeconds !== undefined
+                        ? ` (${ageSeconds}s)`
+                        : ""}
+                    </span>
+                  </div>
                   {onClearSelection && (
                     <button
                       type="button"
@@ -128,6 +175,80 @@ export function TwinWorkspace({
               </div>
             </div>
 
+            {/* Stale / Unavailable Diagnostic Alerts */}
+            {isStale && (
+              <div
+                className="stale-notice"
+                style={{
+                  background: "rgba(244, 185, 66, 0.12)",
+                  border: "1px solid rgba(244, 185, 66, 0.35)",
+                  color: "#f4b942",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  marginBottom: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span>⚠️</span>
+                <span>
+                  TELEMETRY STALE ({ageSeconds ?? "?"}s old). Displaying last known reading for diagnosis. Not verified live.
+                </span>
+              </div>
+            )}
+
+            {isUnavailable && (
+              <div
+                className="unavailable-notice"
+                style={{
+                  background: "rgba(100, 116, 139, 0.15)",
+                  border: "1px solid rgba(100, 116, 139, 0.35)",
+                  color: "#94a3b8",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  marginBottom: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span>○</span>
+                <span>
+                  TELEMETRY UNAVAILABLE. No valid telemetry received for this asset.
+                </span>
+              </div>
+            )}
+
+            {validationError && (
+              <div
+                className="validation-error-notice"
+                style={{
+                  background: "rgba(255, 92, 92, 0.12)",
+                  border: "1px solid rgba(255, 92, 92, 0.35)",
+                  color: "#ff5c5c",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  marginBottom: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span>⚠️</span>
+                <span>
+                  INGESTION VALIDATION ISSUE: {validationError}
+                </span>
+              </div>
+            )}
+
+
             {/* Dominant Status & Temperature Operational Banner */}
             <div
               className={`asset-hero-banner status-${currentStatus.toLowerCase()}`}
@@ -140,7 +261,11 @@ export function TwinWorkspace({
                   {currentStatus}
                 </span>
                 <span className="hero-status-context">
-                  {currentStatus === "CRITICAL"
+                  {isStale
+                    ? `DATA STALE — LAST KNOWN: ${currentStatus}`
+                    : isUnavailable
+                    ? "UNAVAILABLE — NO TELEMETRY"
+                    : currentStatus === "CRITICAL"
                     ? "THERMAL LIMIT EXCEEDED"
                     : currentStatus === "WARNING"
                     ? "ELEVATED TEMPERATURE"

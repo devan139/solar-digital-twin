@@ -1,12 +1,60 @@
 export type PlantStatus =
   | "NORMAL"
   | "WARNING"
-  | "CRITICAL";
+  | "CRITICAL"
+  | "UNKNOWN";
 
 export type AssetStatus =
   | "NORMAL"
   | "WARNING"
-  | "CRITICAL";
+  | "CRITICAL"
+  | "UNKNOWN";
+
+export type EquipmentCondition =
+  | "NORMAL"
+  | "WARNING"
+  | "CRITICAL"
+  | "UNKNOWN";
+
+export type DataCondition =
+  | "FRESH"
+  | "STALE"
+  | "UNAVAILABLE";
+
+export type PlantDataHealth =
+  | "HEALTHY"
+  | "DEGRADED"
+  | "UNAVAILABLE";
+
+export type SimulatorState =
+  | "RUNNING"
+  | "STOPPED"
+  | "ERROR"
+  | "UNKNOWN";
+
+export type ConnectionState =
+  | "CONNECTED"
+  | "RECONNECTING"
+  | "DISCONNECTED";
+
+export interface AssetHealth {
+  asset_id: string;
+  data_condition: DataCondition;
+  equipment_condition: EquipmentCondition;
+  last_valid_measurement_time: string | null;
+  last_receipt_time: string | null;
+  age_seconds: number | null;
+  has_valid_reading: boolean;
+  last_error?: string | null;
+}
+
+export interface SystemHealth {
+  server_time: string;
+  simulator_status: SimulatorState;
+  plant_data_health: PlantDataHealth;
+  plant_equipment_condition: EquipmentCondition;
+  assets: Record<string, AssetHealth>;
+}
 
 export interface PlantTelemetry {
   timestamp: string;
@@ -15,6 +63,7 @@ export interface PlantTelemetry {
   maximum_panel_temperature_c: number;
   average_efficiency_pct: number;
   plant_status: PlantStatus;
+  data_health?: PlantDataHealth;
 }
 
 export interface AssetTelemetry {
@@ -29,6 +78,7 @@ export interface AssetTelemetry {
   current_a: number;
   efficiency_pct: number;
   status: string;
+  ingested_at?: string | null;
 }
 
 export interface AssetState {
@@ -37,6 +87,9 @@ export interface AssetState {
   power_kw: number;
   panel_temperature_c: number;
   efficiency_pct: number;
+  data_condition?: DataCondition;
+  equipment_condition?: EquipmentCondition;
+  age_seconds?: number | null;
 }
 
 export interface Alert {
@@ -56,4 +109,5 @@ export interface TelemetryMessage {
   assets: AssetTelemetry[];
   states: AssetState[];
   alerts: Alert[];
+  health?: SystemHealth;
 }

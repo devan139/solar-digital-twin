@@ -30,8 +30,15 @@ export function PlantCharts({ history }: PlantChartsProps) {
   }));
 
   const latestPoint = data.length > 0 ? data[data.length - 1] : null;
-  const isCriticalTemp = latestPoint ? latestPoint.temperature >= 70 : false;
-  const tempSeriesColor = isCriticalTemp ? "#FF5C5C" : "#F28C28";
+  const isCriticalTemp = latestPoint ? latestPoint.temperature >= 75.0 : false;
+  const isWarningTemp = latestPoint
+    ? latestPoint.temperature >= 70.0 && latestPoint.temperature < 75.0
+    : false;
+  const tempSeriesColor = isCriticalTemp
+    ? "#FF5C5C"
+    : isWarningTemp
+    ? "#F4B942"
+    : "#F28C28";
 
   return (
     <section
@@ -162,9 +169,9 @@ export function PlantCharts({ history }: PlantChartsProps) {
                 className={`chart-hero-metric ${
                   isCriticalTemp
                     ? "metric-critical"
-                    : latestPoint.temperature >= 55
+                    : isWarningTemp
                     ? "metric-warning"
-                    : "metric-warning"
+                    : "metric-power"
                 }`}
               >
                 <span className="chart-metric-value">
@@ -175,11 +182,20 @@ export function PlantCharts({ history }: PlantChartsProps) {
             )}
             <span
               className={`chart-tag ${
-                isCriticalTemp ? "chart-tag-red" : "chart-tag-amber"
+                isCriticalTemp
+                  ? "chart-tag-red"
+                  : isWarningTemp
+                  ? "chart-tag-amber"
+                  : "chart-tag-gold"
               }`}
             >
-              PEAK TEMP
+              {isCriticalTemp
+                ? "CRITICAL ≥75°C"
+                : isWarningTemp
+                ? "WARNING ≥70°C"
+                : "PEAK TEMP"}
             </span>
+
           </div>
         </div>
 

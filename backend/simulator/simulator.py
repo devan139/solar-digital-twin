@@ -61,14 +61,18 @@ class TelemetrySimulator:
 
         return base_interval / self.speed_multiplier
 
-    def advance(self):
+    def advance(self) -> bool:
         self.index += 1
+        looped = False
 
         if self.index >= len(self.plant_records):
             if self.loop:
                 self.index = 0
+                looped = True
             else:
                 self.index = len(self.plant_records) - 1
+
+        return looped
 
     def get_current_state(self) -> dict:
         plant = self.get_current_plant()
